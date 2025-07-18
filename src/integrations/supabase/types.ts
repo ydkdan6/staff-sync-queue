@@ -14,16 +14,149 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      queue_entries: {
+        Row: {
+          called_at: string | null
+          created_at: string
+          id: string
+          queue_id: string
+          queue_number: number
+          reason: string
+          status: Database["public"]["Enums"]["entry_status"]
+          student_name: string
+        }
+        Insert: {
+          called_at?: string | null
+          created_at?: string
+          id?: string
+          queue_id: string
+          queue_number: number
+          reason: string
+          status?: Database["public"]["Enums"]["entry_status"]
+          student_name: string
+        }
+        Update: {
+          called_at?: string | null
+          created_at?: string
+          id?: string
+          queue_id?: string
+          queue_number?: number
+          reason?: string
+          status?: Database["public"]["Enums"]["entry_status"]
+          student_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_entries_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "queues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      queues: {
+        Row: {
+          created_at: string
+          id: string
+          staff_id: string
+          status: Database["public"]["Enums"]["queue_status"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          staff_id: string
+          status?: Database["public"]["Enums"]["queue_status"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          staff_id?: string
+          status?: Database["public"]["Enums"]["queue_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queues_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff: {
+        Row: {
+          created_at: string
+          department: string
+          email: string
+          id: string
+          name: string
+          unique_id: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          email: string
+          id?: string
+          name: string
+          unique_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string
+          id?: string
+          name?: string
+          unique_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_unique_staff_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_next_queue_number: {
+        Args: { queue_uuid: string }
+        Returns: number
+      }
+      handle_unresponsive_students: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
+      entry_status: "waiting" | "called" | "skipped" | "completed"
+      queue_status: "open" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +283,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+      entry_status: ["waiting", "called", "skipped", "completed"],
+      queue_status: ["open", "closed"],
+    },
   },
 } as const

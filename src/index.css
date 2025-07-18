@@ -95,11 +95,25 @@ All colors MUST be HSL.
 }
 
 @layer base {
+  :root {
+    /* Queue specific colors */
+    --queue-waiting: 43 96% 67%;
+    --queue-called: 120 100% 50%;
+    --queue-warning: 38 92% 50%;
+    --queue-error: 0 84% 60%;
+    --queue-success: 142 76% 36%;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  html {
+    @apply dark;
   }
 }
