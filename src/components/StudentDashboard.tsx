@@ -33,6 +33,45 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const { toast } = useToast();
 
+  // Save queue entry to sessionStorage on mount and when it changes
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('currentQueueEntry', JSON.stringify(currentEntry));
+    } catch (error) {
+      console.error('Error saving to sessionStorage:', error);
+    }
+  }, [currentEntry]);
+
+  // Load queue entry from sessionStorage on page refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try {
+        sessionStorage.setItem('currentQueueEntry', JSON.stringify(currentEntry));
+      } catch (error) {
+        console.error('Error saving to sessionStorage on unload:', error);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [currentEntry]);
+
+  // Check if there's a saved queue entry on component mount (for page refresh)
+  useEffect(() => {
+    try {
+      const savedEntry = sessionStorage.getItem('currentQueueEntry');
+      if (savedEntry && !queueEntry.id) {
+        const parsedEntry = JSON.parse(savedEntry);
+        setCurrentEntry(parsedEntry);
+      }
+    } catch (error) {
+      console.error('Error loading from sessionStorage:', error);
+    }
+  }, [queueEntry.id]);
+
   useEffect(() => {
     // Set up real-time subscription for queue updates
     const channel = supabase
@@ -43,7 +82,7 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
           event: '*',
           schema: 'public',
           table: 'queue_entries',
-          filter: `id=eq.${queueEntry.id}`
+          filter: `id=eq.${currentEntry.id}`
         },
         (payload) => {
           if (payload.eventType === 'UPDATE') {
@@ -60,6 +99,12 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
               setTimeRemaining(5 * 60); // 5 minutes in seconds
             }
           } else if (payload.eventType === 'DELETE') {
+            // Clear sessionStorage when removed from queue
+            try {
+              sessionStorage.removeItem('currentQueueEntry');
+            } catch (error) {
+              console.error('Error clearing sessionStorage:', error);
+            }
             toast({
               title: "Removed from queue",
               description: "You have been removed from the queue.",
@@ -77,7 +122,7 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queueEntry.id]);
+  }, [currentEntry.id]);
 
   useEffect(() => {
     // Update position when other queue entries change
@@ -122,7 +167,7 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
       const { data, error } = await supabase
         .from('queue_entries')
         .select('queue_number, status')
-        .eq('queue_id', queueEntry.queue_id)
+        .eq('queue_id', currentEntry.queue_id)
         .lt('queue_number', currentEntry.queue_number)
         .in('status', ['waiting', 'called']);
 
@@ -138,10 +183,54 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
 
   const playNotificationSound = () => {
     try {
-      const audio = new Audio('/public/audio/notification.wav');
-      audio.play().catch(console.error);
+      // Correct path for public assets - remove '/public' prefix
+      const audio = new Audio('/audio/notification.wav');
+      
+      // Set volume and other properties
+      audio.volume = 0.7;
+      audio.preload = 'auto';
+      
+      // Play with error handling
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Notification sound played successfully');
+          })
+          .catch((error) => {
+            console.error('Error playing notification sound:', error);
+            // Fallback: try to create a simple beep sound
+            createFallbackSound();
+          });
+      }
     } catch (error) {
-      console.error('Error playing notification sound:', error);
+      console.error('Error creating audio element:', error);
+      // Fallback: try to create a simple beep sound
+      createFallbackSound();
+    }
+  };
+
+  const createFallbackSound = () => {
+    try {
+      // Create a simple beep using Web Audio API as fallback
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = 800; // 800 Hz tone
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+      console.error('Error creating fallback sound:', error);
     }
   };
 
@@ -162,6 +251,16 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
       default:
         return 'bg-muted text-muted-foreground';
     }
+  };
+
+  const handleBackClick = () => {
+    // Clear sessionStorage when manually going back
+    try {
+      sessionStorage.removeItem('currentQueueEntry');
+    } catch (error) {
+      console.error('Error clearing sessionStorage:', error);
+    }
+    onBack();
   };
 
   return (
@@ -208,9 +307,9 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
           </div>
 
           {currentEntry.status === 'called' && timeRemaining !== null && (
-            <div className="p-4 bg-[hsl(var(--queue-warning))] text-black rounded-lg">
+            <div className="p-4 bg-[hsl(var(--queue-warning))] text-black rounded-lg animate-pulse">
               <div className="flex items-center gap-2 mb-2">
-                <Bell className="h-4 w-4" />
+                <Bell className="h-4 w-4 animate-bounce" />
                 <span className="font-medium">You've been called!</span>
               </div>
               <div className="text-sm">
@@ -243,7 +342,7 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
 
       <Button
         variant="outline"
-        onClick={onBack}
+        onClick={handleBackClick}
         className="w-full"
       >
         Back to Main
