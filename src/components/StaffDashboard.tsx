@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,8 @@ import {
   X, 
   Clock,
   User,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 
 interface QueueEntry {
@@ -38,7 +39,77 @@ export default function StaffDashboard({ staff, onLogout }: StaffDashboardProps)
   const [queue, setQueue] = useState<Queue | null>(null);
   const [queueEntries, setQueueEntries] = useState<QueueEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
+
+  // Memoized function to fetch queue entries for a specific queue ID
+  const fetchQueueEntries = useCallback(async (queueId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('queue_entries')
+        .select('*')
+        .eq('queue_id', queueId)
+        .in('status', ['waiting', 'called'])
+        .order('queue_number');
+
+      if (error) throw error;
+      setQueueEntries(data || []);
+    } catch (error) {
+      console.error('Error fetching queue entries:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load queue entries",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  const fetchQueue = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('queues')
+        .select('*')
+        .eq('staff_id', staff.id)
+        .single();
+
+      if (error) throw error;
+      
+      setQueue(data);
+      
+      // Fetch queue entries after successfully getting queue data
+      if (data?.id) {
+        await fetchQueueEntries(data.id);
+      }
+    } catch (error) {
+      console.error('Error fetching queue:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load queue information",
+        variant: "destructive",
+      });
+    }
+  }, [staff.id, fetchQueueEntries, toast]);
+
+  // Manual refresh function
+  const refreshData = async () => {
+    setRefreshing(true);
+    try {
+      await fetchQueue();
+      toast({
+        title: "Refreshed",
+        description: "Queue data has been updated",
+      });
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh data",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     fetchQueue();
@@ -54,7 +125,10 @@ export default function StaffDashboard({ staff, onLogout }: StaffDashboardProps)
           table: 'queue_entries'
         },
         () => {
-          fetchQueueEntries();
+          // Refresh queue entries when there are changes
+          if (queue?.id) {
+            fetchQueueEntries(queue.id);
+          }
         }
       )
       .subscribe();
@@ -68,46 +142,7 @@ export default function StaffDashboard({ staff, onLogout }: StaffDashboardProps)
       supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, [staff.id]);
-
-  const fetchQueue = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('queues')
-        .select('*')
-        .eq('staff_id', staff.id)
-        .single();
-
-      if (error) throw error;
-      setQueue(data);
-      fetchQueueEntries();
-    } catch (error) {
-      console.error('Error fetching queue:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load queue information",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchQueueEntries = async () => {
-    if (!queue?.id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('queue_entries')
-        .select('*')
-        .eq('queue_id', queue.id)
-        .in('status', ['waiting', 'called'])
-        .order('queue_number');
-
-      if (error) throw error;
-      setQueueEntries(data || []);
-    } catch (error) {
-      console.error('Error fetching queue entries:', error);
-    }
-  };
+  }, [fetchQueue, queue?.id, fetchQueueEntries]);
 
   const callNextStudent = async () => {
     const nextStudent = queueEntries.find(entry => entry.status === 'waiting');
@@ -255,9 +290,20 @@ export default function StaffDashboard({ staff, onLogout }: StaffDashboardProps)
           <h1 className="text-3xl font-bold">Staff Dashboard</h1>
           <p className="text-muted-foreground">Welcome, {staff.name}</p>
         </div>
-        <Button variant="outline" onClick={onLogout}>
-          Logout
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={refreshData}
+            disabled={refreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button variant="outline" onClick={onLogout}>
+            Logout
+          </Button>
+        </div>
       </div>
 
       {/* Queue Status */}

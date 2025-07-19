@@ -138,7 +138,7 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
 
   const playNotificationSound = () => {
     try {
-      const audio = new Audio('/public/audio/notification.mp3');
+      const audio = new Audio('/public/audio/notification.wav');
       audio.play().catch(console.error);
     } catch (error) {
       console.error('Error playing notification sound:', error);

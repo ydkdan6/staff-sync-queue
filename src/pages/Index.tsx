@@ -3,17 +3,32 @@ import { Button } from "@/components/ui/button";
 import StudentForm from "@/components/StudentForm";
 import StudentDashboard from "@/components/StudentDashboard";
 import AdminLogin from "@/components/AdminLogin";
+import AdminSignup from "@/components/AdminSignUp";
 import StaffAccess from "@/components/StaffAccess";
 import AdminDashboard from "@/components/AdminDashboard";
 import StaffDashboard from "@/components/StaffDashboard";
 import { ShieldCheck, Users } from "lucide-react";
 
-type AppState = 'main' | 'student-dashboard' | 'admin-login' | 'admin-dashboard' | 'staff-access' | 'staff-dashboard';
+type AppState = 'main' | 'student-dashboard' | 'admin-login' | 'admin-signup' | 'admin-dashboard' | 'staff-access' | 'staff-dashboard';
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>('main');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [queueEntry, setQueueEntry] = useState<any>(null);
+
+  const handleLogin = (user: any) => {
+    setCurrentUser(user);
+    setAppState('admin-dashboard');
+  };
+
+  const handleSignup = (user: any) => {
+    setCurrentUser(user);
+    setAppState('admin-dashboard');
+  };
+
+  const handleBack = () => {
+    setAppState('main');
+  };
 
   const renderCurrentView = () => {
     switch (appState) {
@@ -26,12 +41,17 @@ const Index = () => {
         );
       case 'admin-login':
         return (
-          <AdminLogin
-            onLogin={(user) => {
-              setCurrentUser(user);
-              setAppState('admin-dashboard');
-            }}
-            onBack={() => setAppState('main')}
+          <AdminLogin 
+            onLogin={handleLogin}
+            onBack={handleBack}
+            onSignup={() => setAppState('admin-signup')}
+          />
+        );
+      case 'admin-signup':
+        return (
+          <AdminSignup 
+            onSignup={handleSignup}
+            onBack={() => setAppState('admin-login')}
           />
         );
       case 'admin-dashboard':

@@ -7,25 +7,34 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 
-interface AdminLoginProps {
-  onLogin: (user: any) => void;
+interface AdminSignupProps {
+  onSignup: (user: any) => void;
   onBack: () => void;
-  onSignup: () => void; // Add this for navigation to signup
 }
 
-export default function AdminLogin({ onLogin, onBack, onSignup }: AdminLoginProps) {
+export default function AdminSignup({ onSignup, onBack }: AdminSignupProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim() || !name.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please enter both email and password",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters",
         variant: "destructive",
       });
       return;
@@ -33,7 +42,8 @@ export default function AdminLogin({ onLogin, onBack, onSignup }: AdminLoginProp
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Create auth user
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
       });
@@ -41,35 +51,42 @@ export default function AdminLogin({ onLogin, onBack, onSignup }: AdminLoginProp
       if (error) throw error;
 
       if (data.user) {
-        // Check if user is admin using the auth user's ID
-        const { data: userData, error: userError } = await supabase
+        // Insert into users table with admin role
+        const { error: userError } = await supabase
           .from('users')
-          .select('*')
-          .eq('id', data.user.id) // Use ID instead of email
-          .eq('role', 'admin')
-          .single();
-
-        if (userError || !userData) {
-          await supabase.auth.signOut();
-          toast({
-            title: "Access Denied",
-            description: "You don't have admin privileges",
-            variant: "destructive",
+          .insert({
+            id: data.user.id, // Use the auth user's UUID
+            email: email.trim(),
+            name: name.trim(),
+            role: 'admin'
           });
-          return;
+
+        if (userError) {
+          console.error('User creation error:', userError);
+          throw new Error('Failed to create user profile');
         }
 
         toast({
-          title: "Login Successful",
-          description: `Welcome back, ${userData.name}!`,
+          title: "Account Created",
+          description: "Admin account created successfully! Please check your email for verification.",
         });
-        onLogin(userData);
+
+        // Note: In production, you might want to wait for email verification
+        // For now, we'll proceed with the signup
+        const userData = {
+          id: data.user.id,
+          email: email.trim(),
+          name: name.trim(),
+          role: 'admin'
+        };
+
+        onSignup(userData);
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Signup error:', error);
       toast({
-        title: "Login Failed",
-        description: error.message || "Invalid email or password",
+        title: "Signup Failed",
+        description: error.message || "Failed to create account",
         variant: "destructive",
       });
     } finally {
@@ -82,11 +99,23 @@ export default function AdminLogin({ onLogin, onBack, onSignup }: AdminLoginProp
       <Card>
         <CardHeader>
           <CardTitle className="text-center text-2xl font-semibold">
-            Admin Login
+            Create Admin Account
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -107,8 +136,9 @@ export default function AdminLogin({ onLogin, onBack, onSignup }: AdminLoginProp
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Enter your password (min 6 characters)"
                   required
+                  minLength={6}
                 />
                 <Button
                   type="button"
@@ -131,19 +161,9 @@ export default function AdminLogin({ onLogin, onBack, onSignup }: AdminLoginProp
               className="w-full"
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Creating Account...' : 'Create Admin Account'}
             </Button>
           </form>
-
-          <div className="mt-4 text-center">
-            <Button
-              variant="link"
-              onClick={onSignup}
-              className="text-sm"
-            >
-              Don't have an admin account? Create one
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
@@ -152,7 +172,7 @@ export default function AdminLogin({ onLogin, onBack, onSignup }: AdminLoginProp
         onClick={onBack}
         className="w-full"
       >
-        Back to Main
+        Back to Login
       </Button>
     </div>
   );
