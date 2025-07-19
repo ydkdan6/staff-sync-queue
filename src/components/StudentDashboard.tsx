@@ -183,7 +183,6 @@ export default function StudentDashboard({ queueEntry, onBack }: StudentDashboar
 
   const playNotificationSound = () => {
     try {
-      // Correct path for public assets - remove '/public' prefix
       const audio = new Audio('/audio/notification.wav');
       
       // Set volume and other properties
