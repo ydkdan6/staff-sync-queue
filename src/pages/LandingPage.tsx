@@ -109,12 +109,12 @@ const QueueSystemLanding: React.FC = () => {
                 </button>
               ))}
               <div className="pt-4 pb-2 border-t border-white/10 space-y-2">
-                <button className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white rounded-md text-base font-medium">
-                  Login
-                </button>
-                <button className="block w-full text-left px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-md text-base font-medium">
-                  Sign Up
-                </button>
+                {/* <button className="text-gray-300 hover:text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                Login
+              </button> */}
+              <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-all duration-300 transform hover:scale-105">
+                <Link to="/auth">Access System</Link>
+              </button>
               </div>
             </div>
           </div>
