@@ -242,163 +242,221 @@ export default function AdminDashboard({ admin, onLogout }: AdminDashboardProps)
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Welcome, {admin.name}</p>
-        </div>
-        <Button variant="outline" onClick={onLogout}>
-          Logout
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-gradient-to-r from-emerald-200/30 to-green-300/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-r from-teal-200/30 to-emerald-300/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-green-200/20 to-emerald-200/20 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <div>
-                <div className="text-2xl font-bold">{staff.length}</div>
-                <div className="text-sm text-muted-foreground">Staff Members</div>
+      <div className="relative z-10 space-y-8 max-w-6xl mx-auto p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-green-100">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent">
+              Admin Dashboard
+            </h1>
+            <p className="text-green-600/80 mt-2 text-lg">Welcome, {admin.name}</p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={onLogout}
+            className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm"
+          >
+            Logout
+          </Button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-emerald-500 to-green-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+            <CardContent className="p-8">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Users className="h-8 w-8" />
+                </div>
+                <div>
+                  <div className="text-3xl font-bold">{staff.length}</div>
+                  <div className="text-emerald-100 text-sm font-medium">Staff Members</div>
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Staff Management */}
+        <Card className="bg-white/90 backdrop-blur-sm border-green-100 shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-emerald-500/5 to-green-500/5 border-b border-green-100">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-emerald-500 to-green-600 rounded-lg">
+                  <Settings className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-green-800">Staff Management</span>
+              </div>
+              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                <DialogTrigger asChild>
+                  <Button 
+                    onClick={() => resetForm()}
+                    className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Staff
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-white/95 backdrop-blur-sm border-green-100">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold text-green-800">
+                      {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <form className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="name" className="text-green-700 font-medium">Full Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Dr. John Smith"
+                        required
+                        className="border-green-200 focus:border-green-400 focus:ring-green-400/20"
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <Label htmlFor="email" className="text-green-700 font-medium">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="john.smith@university.edu"
+                        required
+                        className="border-green-200 focus:border-green-400 focus:ring-green-400/20"
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <Label htmlFor="department" className="text-green-700 font-medium">Department</Label>
+                      <Input
+                        id="department"
+                        value={formData.department}
+                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                        placeholder="Computer Science"
+                        required
+                        className="border-green-200 focus:border-green-400 focus:ring-green-400/20"
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-4">
+                      <Button 
+                        type="submit" 
+                        disabled={loading}
+                        className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-lg"
+                      >
+                        {loading ? 'Saving...' : (editingStaff ? 'Update' : 'Add Staff')}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={resetForm}
+                        className="border-green-200 text-green-700 hover:bg-green-50"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            {staff.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-emerald-100 to-green-100 rounded-full flex items-center justify-center">
+                  <Users className="h-12 w-12 text-green-500" />
+                </div>
+                <p className="text-green-600/60 text-lg">No staff members added yet</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {staff.map((member, index) => (
+                  <div
+                    key={member.id}
+                    className="group bg-gradient-to-r from-white to-green-50/50 hover:from-green-50/50 hover:to-emerald-50/50 border border-green-100 hover:border-green-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+                    style={{
+                      animationDelay: `${index * 100}ms`
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-green-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                            {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-green-800 text-lg">{member.name}</h3>
+                            <Badge 
+                              variant="outline" 
+                              className="border-green-200 text-green-700 bg-green-50/50 font-medium"
+                            >
+                              {member.department}
+                            </Badge>
+                          </div>
+                        </div>
+                        <p className="text-green-600/80 mb-4 ml-15">{member.email}</p>
+                        <div className="flex items-center gap-3 ml-15">
+                          <Badge 
+                            variant="secondary" 
+                            className="font-mono bg-gradient-to-r from-emerald-100 to-green-100 text-green-800 border border-green-200 px-3 py-1"
+                          >
+                            ID: {member.unique_id}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(member.unique_id)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-100/50 transition-all duration-200"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEdit(member)}
+                          disabled={loading}
+                          className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 shadow-sm"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => regenerateUniqueId(member.id, member.name)}
+                          disabled={loading}
+                          className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300 shadow-sm"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteStaff(member.id, member.name)}
+                          disabled={loading}
+                          className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 shadow-sm"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Staff Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Staff Management
-            </div>
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button onClick={() => resetForm()}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Staff
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Dr. John Smith"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="john.smith@university.edu"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      placeholder="Computer Science"
-                      required
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" disabled={loading}>
-                      {loading ? 'Saving...' : (editingStaff ? 'Update' : 'Add Staff')}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={resetForm}>
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {staff.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No staff members added yet
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {staff.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-medium">{member.name}</h3>
-                      <Badge variant="outline">{member.department}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">{member.email}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="font-mono">
-                        ID: {member.unique_id}
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(member.unique_id)}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => startEdit(member)}
-                      disabled={loading}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => regenerateUniqueId(member.id, member.name)}
-                      disabled={loading}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteStaff(member.id, member.name)}
-                      disabled={loading}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
